@@ -1,13 +1,38 @@
-# .NET build output
+# .NET build and runtime artifacts
 **/bin/
 **/obj/
+artifacts/
 .vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+
+# Test results and code coverage
+[Tt]est[Rr]esult*/
+**/TestResults/
+*.trx
+*.coverage
+*.coveragexml
 
 # Node.js and VS Code extension build output
 **/node_modules/
 src/RazorFormatter.VSCode/dist/
+src/RazorFormatter.VSCode/out/
 *.vsix
+.vscode-test/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# IDE and OS files
+# IDE, OS, and Temporary files
 .DS_Store
 Thumbs.db
+ehthumbs.db
+.idea/
+*.swp
+*.swo
+*~
+*.tmp
+.agent/

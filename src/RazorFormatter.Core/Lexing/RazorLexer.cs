@@ -358,8 +358,7 @@ namespace RazorFormatter.Core.Lexing
         private void LexJavaScriptContext(LexicalContext context)
         {
             var start = _offset;
-            var idx = _text.IndexOf("</script>", start, StringComparison.OrdinalIgnoreCase);
-            var end = idx < 0 ? _text.Length : idx;
+            var end = FindClosingTagOutsideJsLiterals(_text, start, "</script>");
             _offset = end;
             if (end > start)
             {
@@ -371,14 +370,127 @@ namespace RazorFormatter.Core.Lexing
         private void LexCssContext(LexicalContext context)
         {
             var start = _offset;
-            var idx = _text.IndexOf("</style>", start, StringComparison.OrdinalIgnoreCase);
-            var end = idx < 0 ? _text.Length : idx;
+            var end = FindClosingTagOutsideCssLiterals(_text, start, "</style>");
             _offset = end;
             if (end > start)
             {
                 Emit(RazorSyntaxKind.EmbeddedCss, start, end, LexicalState.Css);
             }
             _contextStack.Pop();
+        }
+
+        private static int FindClosingTagOutsideJsLiterals(string text, int start, string closeTag)
+        {
+            var p = start;
+            var len = text.Length;
+            var tagLen = closeTag.Length;
+
+            while (p < len)
+            {
+                if (p + tagLen <= len && string.Compare(text, p, closeTag, 0, tagLen, StringComparison.OrdinalIgnoreCase) == 0)
+                {
+                    return p;
+                }
+
+                var ch = text[p];
+
+                // Single line comment // ...
+                if (ch == '/' && p + 1 < len && text[p + 1] == '/')
+                {
+                    p += 2;
+                    while (p < len && text[p] != '\n' && text[p] != '\r') p++;
+                    continue;
+                }
+
+                // Block comment /* ... */
+                if (ch == '/' && p + 1 < len && text[p + 1] == '*')
+                {
+                    p += 2;
+                    while (p + 1 < len && !(text[p] == '*' && text[p + 1] == '/')) p++;
+                    if (p + 1 < len) p += 2;
+                    else p = len;
+                    continue;
+                }
+
+                // Strings: ", ', `
+                if (ch == '"' || ch == '\'' || ch == '`')
+                {
+                    var q = ch;
+                    p++;
+                    while (p < len)
+                    {
+                        if (text[p] == '\\')
+                        {
+                            p = Math.Min(len, p + 2);
+                            continue;
+                        }
+                        if (text[p] == q)
+                        {
+                            p++;
+                            break;
+                        }
+                        p++;
+                    }
+                    continue;
+                }
+
+                p++;
+            }
+
+            return len;
+        }
+
+        private static int FindClosingTagOutsideCssLiterals(string text, int start, string closeTag)
+        {
+            var p = start;
+            var len = text.Length;
+            var tagLen = closeTag.Length;
+
+            while (p < len)
+            {
+                if (p + tagLen <= len && string.Compare(text, p, closeTag, 0, tagLen, StringComparison.OrdinalIgnoreCase) == 0)
+                {
+                    return p;
+                }
+
+                var ch = text[p];
+
+                // Block comment /* ... */
+                if (ch == '/' && p + 1 < len && text[p + 1] == '*')
+                {
+                    p += 2;
+                    while (p + 1 < len && !(text[p] == '*' && text[p + 1] == '/')) p++;
+                    if (p + 1 < len) p += 2;
+                    else p = len;
+                    continue;
+                }
+
+                // Strings: ", '
+                if (ch == '"' || ch == '\'')
+                {
+                    var q = ch;
+                    p++;
+                    while (p < len)
+                    {
+                        if (text[p] == '\\')
+                        {
+                            p = Math.Min(len, p + 2);
+                            continue;
+                        }
+                        if (text[p] == q)
+                        {
+                            p++;
+                            break;
+                        }
+                        p++;
+                    }
+                    continue;
+                }
+
+                p++;
+            }
+
+            return len;
         }
 
         private void LexWhitespace(LexicalState state)

@@ -142,7 +142,10 @@ namespace RazorFormatter.Cli
             foreach (var pattern in files)
             {
                 var matchedFiles = Directory.Exists(pattern)
-                    ? Directory.GetFiles(pattern, "*.cshtml", SearchOption.AllDirectories)
+                    ? System.Linq.Enumerable.ToArray(
+                        System.IO.Directory.EnumerateFiles(pattern, "*.*", SearchOption.AllDirectories)
+                            .Where(f => f.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase) ||
+                                        f.EndsWith(".razor", StringComparison.OrdinalIgnoreCase)))
                     : File.Exists(pattern)
                         ? new[] { pattern }
                         : Array.Empty<string>();

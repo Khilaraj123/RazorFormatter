@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
   <Metadata>
-    <Identity Id="RazorFormatter.VisualStudio" Version="1.0.0" Language="en-US" Publisher="RazorFormatter" />
+    <Identity Id="RazorFormatter.VisualStudio" Version="1.0.0" Language="en-US" Publisher="razor-code-formatter" />
     <DisplayName>Razor Formatter for Visual Studio</DisplayName>
     <Description>Razor (.cshtml) code formatting for Visual Studio using RazorFormatter.Core</Description>
   </Metadata>
@@ -18,6 +18,6 @@
   </Prerequisites>
   <Assets>
     <Asset Type="Microsoft.VisualStudio.MefComponent" Path="RazorFormatter.VisualStudio.dll" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="RazorFormatter.Core.dll" />
   </Assets>
 </PackageManifest>
-

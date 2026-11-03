@@ -1,9 +1,15 @@
 {
-  "name": "razor-formatter",
+  "name": "razor-code-formatter",
   "displayName": "Razor Formatter",
   "description": "Prettier-grade Razor (.cshtml / .razor) formatter for VS Code, Cursor, and Antigravity",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "razor-formatter",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Khilaraj123/RazorFormatter"
+  },
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -16,6 +22,12 @@
     "onLanguage:razor",
     "onLanguage:html"
   ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Formatting Razor files requires workspace trust to prevent executing untrusted binaries."
+    }
+  },
   "contributes": {
     "configuration": {
       "title": "Razor Formatter",
@@ -52,18 +64,21 @@
         "razorFormatter.cliPath": {
           "type": "string",
           "default": "",
-          "description": "Optional custom path to the razor-format CLI executable or .dll."
+          "scope": "machine",
+          "description": "Optional custom path to the razor-format CLI executable or .dll. Configurable only in User/Machine settings for security."
         }
       }
     }
   },
   "scripts": {
     "build": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package --no-dependencies"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.2.0",
     "typescript": "^5.4.0"
   }
 }

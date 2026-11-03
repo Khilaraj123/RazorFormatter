@@ -93,20 +93,45 @@ namespace RazorFormatter.Core.Configuration
         public static Dictionary<string, string> ResolveProperties(string targetFilePath, IEnumerable<EditorConfigFile> configFiles)
         {
             var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            var normalizedTarget = Path.GetFullPath(targetFilePath).Replace('\\', '/');
+
+            string normalizedTarget;
+            try
+            {
+                normalizedTarget = Path.GetFullPath(targetFilePath).Replace('\\', '/');
+            }
+            catch
+            {
+                normalizedTarget = targetFilePath.Replace('\\', '/');
+            }
 
             foreach (var configFile in configFiles)
             {
-                var configDir = Path.GetFullPath(configFile.DirectoryPath).Replace('\\', '/');
-                string relativePath;
+                string configDir;
+                try
+                {
+                    configDir = Path.GetFullPath(configFile.DirectoryPath).Replace('\\', '/');
+                }
+                catch
+                {
+                    configDir = configFile.DirectoryPath.Replace('\\', '/');
+                }
 
+                string relativePath;
                 if (normalizedTarget.StartsWith(configDir, StringComparison.OrdinalIgnoreCase))
                 {
                     relativePath = normalizedTarget.Substring(configDir.Length).TrimStart('/');
                 }
                 else
                 {
-                    relativePath = Path.GetFileName(normalizedTarget);
+                    try
+                    {
+                        relativePath = Path.GetFileName(normalizedTarget);
+                    }
+                    catch
+                    {
+                        var lastSlash = normalizedTarget.LastIndexOf('/');
+                        relativePath = lastSlash >= 0 ? normalizedTarget.Substring(lastSlash + 1) : normalizedTarget;
+                    }
                 }
 
                 foreach (var section in configFile.Sections)

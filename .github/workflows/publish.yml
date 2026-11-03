@@ -1,0 +1,162 @@
+name: Release & Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semantic version to publish (e.g. 1.0.0)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Build, Package & Publish Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # -----------------------------------------------------------------------
+      # 1. Determine Semantic Version from Tag or Manual Input
+      # -----------------------------------------------------------------------
+      - name: Determine Semantic Version
+        shell: pwsh
+        run: |
+          if ("${{ github.event.inputs.version }}" -ne "") {
+            $rawVer = "${{ github.event.inputs.version }}"
+          } else {
+            $rawVer = $env:GITHUB_REF_NAME
+          }
+          $version = ($rawVer -replace '^v', '').Trim()
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            $version = "1.0.0"
+          }
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "Target Release Version: $version" -ForegroundColor Green
+
+      # -----------------------------------------------------------------------
+      # 2. Automatically Update Version in Manifests
+      # -----------------------------------------------------------------------
+      - name: Update Version in Manifests
+        shell: pwsh
+        run: |
+          $ver = $env:VERSION
+          Write-Host "Updating package.json and vsixmanifest to version: $ver" -ForegroundColor Cyan
+
+          # 1. Update VS Code extension package.json
+          Push-Location src/RazorFormatter.VSCode
+          npm version $ver --no-git-tag-version --allow-same-version
+          Pop-Location
+
+          # 2. Update Visual Studio source.extension.vsixmanifest
+          $manifestPath = "src/RazorFormatter.VisualStudio/source.extension.vsixmanifest"
+          [xml]$manifestXml = Get-Content $manifestPath
+          $manifestXml.PackageManifest.Metadata.Identity.Version = $ver
+          $manifestXml.Save((Resolve-Path $manifestPath))
+
+          # 3. Update CLI Project Version in RazorFormatter.Cli.csproj
+          $cliProj = "src/RazorFormatter.Cli/RazorFormatter.Cli.csproj"
+          [xml]$cliXml = Get-Content $cliProj
+          $cliXml.Project.PropertyGroup[0].Version = $ver
+          $cliXml.Save((Resolve-Path $cliProj))
+
+          Write-Host "Manifest versions successfully updated to $ver" -ForegroundColor Green
+
+      # -----------------------------------------------------------------------
+      # 3. Setup Toolchains (.NET 10 and Node.js 20)
+      # -----------------------------------------------------------------------
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'src/RazorFormatter.VSCode/package.json'
+
+      # -----------------------------------------------------------------------
+      # 4. Restore, Build, and Run Full Test Suite
+      # -----------------------------------------------------------------------
+      - name: Restore Solution
+        run: dotnet restore RazorFormatter.slnx
+
+      - name: Run Test Suite
+        run: dotnet test RazorFormatter.slnx --configuration Release --no-restore --logger "console;verbosity=normal"
+
+      # -----------------------------------------------------------------------
+      # 5. Build .NET Global Tool and Standalone CLI Binaries
+      # -----------------------------------------------------------------------
+      - name: Publish CLI Tool and Standalone Binaries
+        shell: pwsh
+        run: |
+          ./scripts/publish-cli.ps1 `
+            -Configuration Release `
+            -OutputBase ./artifacts `
+            -Runtimes @("win-x64", "linux-x64", "osx-x64", "osx-arm64")
+
+      # -----------------------------------------------------------------------
+      # 6. Package VS Code and Visual Studio VSIX Extensions
+      # -----------------------------------------------------------------------
+      - name: Package VSIX Extensions
+        shell: pwsh
+        run: |
+          ./scripts/package-vsix.ps1 `
+            -Version $env:VERSION `
+            -Configuration Release `
+            -OutputDir ./artifacts/vsix
+
+      # -----------------------------------------------------------------------
+      # 7. Compress Standalone Binaries for GitHub Release
+      # -----------------------------------------------------------------------
+      - name: Prepare Release Archives
+        shell: pwsh
+        run: |
+          $distDir = "artifacts/dist"
+          New-Item -ItemType Directory -Path $distDir -Force | Out-Null
+          $ver = $env:VERSION
+
+          # Windows
+          Compress-Archive -Path "artifacts/win-x64/*" -DestinationPath "$distDir/razor-format-$ver-win-x64.zip" -Force
+
+          # Linux (tar.gz via tar or zip on Windows runner)
+          Compress-Archive -Path "artifacts/linux-x64/*" -DestinationPath "$distDir/razor-format-$ver-linux-x64.zip" -Force
+
+          # macOS
+          Compress-Archive -Path "artifacts/osx-x64/*" -DestinationPath "$distDir/razor-format-$ver-osx-x64.zip" -Force
+          Compress-Archive -Path "artifacts/osx-arm64/*" -DestinationPath "$distDir/razor-format-$ver-osx-arm64.zip" -Force
+
+          Write-Host "Release distribution archives created in $distDir" -ForegroundColor Green
+          Get-ChildItem -Path $distDir
+
+      # -----------------------------------------------------------------------
+      # 8. Create GitHub Release with Auto-Generated Notes and Attached VSIX Files
+      # -----------------------------------------------------------------------
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: RazorFormatter v${{ env.VERSION }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/vsix/razor-code-formatter-${{ env.VERSION }}.vsix
+            artifacts/vsix/RazorFormatter.VisualStudio-${{ env.VERSION }}.vsix
+            artifacts/tool/RazorFormatter.${{ env.VERSION }}.nupkg
+            artifacts/dist/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

@@ -107,7 +107,7 @@ namespace RazorFormatter.Core
                 }
                 else
                 {
-                    finalChanges = ComputeMinimalChange(source, finalFormatted);
+                    finalChanges = ComputeLocalizedChanges(source, finalFormatted);
                 }
 
                 return new FormatResult(finalFormatted, finalChanges, opts, wasSkipped: false, diagnostics);
@@ -164,6 +164,131 @@ namespace RazorFormatter.Core
 
         public string FormatToText(string source, RazorFormatterOptions? options = null)
             => Format(source, options).FormattedText;
+
+        private static IReadOnlyList<TextChange> ComputeLocalizedChanges(string original, string formatted)
+        {
+            if (original == formatted) return Array.Empty<TextChange>();
+
+            var origText = new SourceText(original);
+            var formText = new SourceText(formatted);
+
+            // If line count is preserved, emit localized line-by-line cluster changes
+            if (origText.LineCount == formText.LineCount)
+            {
+                var lineChanges = new List<TextChange>();
+                var line = 0;
+                while (line < origText.LineCount)
+                {
+                    var origLineText = origText.GetLineText(line);
+                    var formLineText = formText.GetLineText(line);
+
+                    if (origLineText == formLineText)
+                    {
+                        line++;
+                        continue;
+                    }
+
+                    var startClusterLine = line;
+                    while (line < origText.LineCount && origText.GetLineText(line) != formText.GetLineText(line))
+                    {
+                        line++;
+                    }
+
+                    var startOffset = origText.GetOffset(startClusterLine, 0);
+                    var endOffset = line < origText.LineCount ? origText.GetOffset(line, 0) : original.Length;
+
+                    var formStartOffset = formText.GetOffset(startClusterLine, 0);
+                    var formEndOffset = line < formText.LineCount ? formText.GetOffset(line, 0) : formatted.Length;
+
+                    var replacementText = formatted.Substring(formStartOffset, formEndOffset - formStartOffset);
+                    lineChanges.Add(TextChange.Replace(startOffset, endOffset, replacementText));
+                }
+
+                if (lineChanges.Count > 0)
+                {
+                    return lineChanges;
+                }
+            }
+
+            // Line count differed: identify matching anchor lines and emit edits between anchors
+            var changes = new List<TextChange>();
+            var oLine = 0;
+            var fLine = 0;
+
+            while (oLine < origText.LineCount && fLine < formText.LineCount)
+            {
+                if (origText.GetLineText(oLine) == formText.GetLineText(fLine))
+                {
+                    oLine++;
+                    fLine++;
+                    continue;
+                }
+
+                var startOLine = oLine;
+                var startFLine = fLine;
+
+                var foundAnchor = false;
+                var nextOLine = -1;
+                var nextFLine = -1;
+
+                // Lookahead window to synchronize matching lines
+                for (var dist = 1; dist < 50 && !foundAnchor; dist++)
+                {
+                    for (var dO = 0; dO <= dist && !foundAnchor; dO++)
+                    {
+                        var dF = dist - dO;
+                        var testO = startOLine + dO;
+                        var testF = startFLine + dF;
+
+                        if (testO < origText.LineCount && testF < formText.LineCount)
+                        {
+                            var oText = origText.GetLineText(testO);
+                            var fText = formText.GetLineText(testF);
+                            if (oText == fText && oText.Trim().Length > 0)
+                            {
+                                foundAnchor = true;
+                                nextOLine = testO;
+                                nextFLine = testF;
+                            }
+                        }
+                    }
+                }
+
+                if (foundAnchor)
+                {
+                    var origStart = origText.GetOffset(startOLine, 0);
+                    var origEnd = origText.GetOffset(nextOLine, 0);
+
+                    var formStart = formText.GetOffset(startFLine, 0);
+                    var formEnd = formText.GetOffset(nextFLine, 0);
+
+                    var newText = formatted.Substring(formStart, formEnd - formStart);
+                    changes.Add(TextChange.Replace(origStart, origEnd, newText));
+
+                    oLine = nextOLine;
+                    fLine = nextFLine;
+                }
+                else
+                {
+                    var origStart = origText.GetOffset(startOLine, 0);
+                    var formStart = formText.GetOffset(startFLine, 0);
+                    changes.Add(TextChange.Replace(origStart, original.Length, formatted.Substring(formStart)));
+                    break;
+                }
+            }
+
+            if (oLine < origText.LineCount || fLine < formText.LineCount)
+            {
+                var origStart = oLine < origText.LineCount ? origText.GetOffset(oLine, 0) : original.Length;
+                var formStart = fLine < formText.LineCount ? formText.GetOffset(fLine, 0) : formatted.Length;
+                if (origStart < original.Length || formStart < formatted.Length)
+                {
+                    changes.Add(TextChange.Replace(origStart, original.Length, formatted.Substring(formStart)));
+                }
+            }
+
+            return changes.Count > 0 ? changes : ComputeMinimalChange(original, formatted);
+        }
 
         private static IReadOnlyList<TextChange> ComputeMinimalChange(string original, string formatted)
         {

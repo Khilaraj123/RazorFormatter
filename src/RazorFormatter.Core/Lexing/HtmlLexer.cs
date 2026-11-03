@@ -102,7 +102,7 @@ namespace RazorFormatter.Core.Lexing
                         var qch = _text[offset];
                         if (qch == '\\')
                         {
-                            offset += 2;
+                            offset = Math.Min(_text.Length, offset + 2);
                             continue;
                         }
                         if (qch == '@')
@@ -115,7 +115,7 @@ namespace RazorFormatter.Core.Lexing
                             }
                             if (offset + 1 < _text.Length && _text[offset + 1] == '@')
                             {
-                                offset += 2; // skip escaped @@
+                                offset = Math.Min(_text.Length, offset + 2); // skip escaped @@
                                 continue;
                             }
                         }
@@ -140,11 +140,11 @@ namespace RazorFormatter.Core.Lexing
                 offset++;
             }
 
-            end = offset;
+            end = Math.Min(_text.Length, offset);
 
             var voidElement = !isClosing && !string.IsNullOrEmpty(name) && HtmlVoidElements.IsVoid(name);
             var selfClosing = voidElement;
-            if (!selfClosing && end >= 2 && _text[end - 1] == '>')
+            if (!selfClosing && end >= 2 && end <= _text.Length && _text[end - 1] == '>')
             {
                 var p = end - 2;
                 while (p >= start && char.IsWhiteSpace(_text[p])) p--;

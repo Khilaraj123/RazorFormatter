@@ -86,7 +86,7 @@ namespace RazorFormatter.Core.Lexing
                 p++;
                 while (p < _text.Length)
                 {
-                    if (_text[p] == '\\') { p += 2; continue; }
+                    if (_text[p] == '\\') { p = Math.Min(_text.Length, p + 2); continue; }
                     if (_text[p] == '\'') { p++; offset = p; end = p; return true; }
                     if (_text[p] == '\r' || _text[p] == '\n') break;
                     p++;
@@ -163,12 +163,12 @@ namespace RazorFormatter.Core.Lexing
                 while (p < _text.Length)
                 {
                     var ch = _text[p];
-                    if (ch == '\\') { p += 2; continue; }
+                    if (ch == '\\') { p = Math.Min(_text.Length, p + 2); continue; }
                     if (ch == '{')
                     {
                         if (p + 1 < _text.Length && _text[p + 1] == '{')
                         {
-                            p += 2; // escaped {{
+                            p = Math.Min(_text.Length, p + 2); // escaped {{
                             continue;
                         }
                         // Interpolation hole
@@ -183,7 +183,7 @@ namespace RazorFormatter.Core.Lexing
                                 var q = _text[p++];
                                 while (p < _text.Length && _text[p] != q)
                                 {
-                                    if (_text[p] == '\\') p += 2;
+                                    if (_text[p] == '\\') p = Math.Min(_text.Length, p + 2);
                                     else p++;
                                 }
                                 if (p < _text.Length) p++;
@@ -206,7 +206,7 @@ namespace RazorFormatter.Core.Lexing
             p++; // skip opening '"'
             while (p < _text.Length)
             {
-                if (_text[p] == '\\') { p += 2; continue; }
+                if (_text[p] == '\\') { p = Math.Min(_text.Length, p + 2); continue; }
                 if (_text[p] == '"') { p++; offset = p; end = p; return true; }
                 if (_text[p] == '\r' || _text[p] == '\n') break;
                 p++;

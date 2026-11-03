@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -7,9 +8,13 @@ namespace RazorFormatter.Core.Configuration
     /// <summary>
     /// Matches file paths against EditorConfig section glob patterns.
     /// Supports: *, **, ?, [seq], [!seq], {s1,s2,s3}.
+    /// Includes ReDoS timeout protection and thread-safe regex caching.
     /// </summary>
     public static class EditorConfigGlobMatcher
     {
+        private static readonly TimeSpan s_regexTimeout = TimeSpan.FromMilliseconds(250);
+        private static readonly ConcurrentDictionary<string, Regex> s_cache = new(StringComparer.Ordinal);
+
         public static bool IsMatch(string pattern, string relativeFilePath)
         {
             if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(relativeFilePath))
@@ -21,20 +26,38 @@ namespace RazorFormatter.Core.Configuration
             var normalizedPath = relativeFilePath.Replace('\\', '/').TrimStart('/');
             var fileName = System.IO.Path.GetFileName(normalizedPath);
 
-            // If the pattern doesn't contain a slash, match against the filename only
-            if (!pattern.Contains('/'))
+            try
             {
-                var regex = GlobToRegex(pattern);
-                return regex.IsMatch(fileName) || regex.IsMatch(normalizedPath);
+                // If the pattern doesn't contain a slash, match against the filename only
+                if (!pattern.Contains('/'))
+                {
+                    var regex = GetOrCompileRegex(pattern);
+                    return regex.IsMatch(fileName) || regex.IsMatch(normalizedPath);
+                }
+
+                // Pattern contains a slash: match against relative path from the .editorconfig directory
+                var patternToMatch = pattern.StartsWith("/", StringComparison.Ordinal)
+                    ? pattern.Substring(1)
+                    : pattern;
+
+                var fullRegex = GetOrCompileRegex(patternToMatch);
+                return fullRegex.IsMatch(normalizedPath);
             }
+            catch (RegexMatchTimeoutException)
+            {
+                // ReDoS protection: abort match if computation exceeds 250ms
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                // Malformed glob pattern in .editorconfig
+                return false;
+            }
+        }
 
-            // Pattern contains a slash: match against relative path from the .editorconfig directory
-            var patternToMatch = pattern.StartsWith("/", StringComparison.Ordinal)
-                ? pattern.Substring(1)
-                : pattern;
-
-            var fullRegex = GlobToRegex(patternToMatch);
-            return fullRegex.IsMatch(normalizedPath);
+        public static Regex GetOrCompileRegex(string glob)
+        {
+            return s_cache.GetOrAdd(glob, g => GlobToRegex(g));
         }
 
         public static Regex GlobToRegex(string glob)
@@ -102,7 +125,11 @@ namespace RazorFormatter.Core.Configuration
                         if (closeBracket > i)
                         {
                             var inner = glob.Substring(i + 1, closeBracket - i - 1);
-                            if (inner.StartsWith("!", StringComparison.Ordinal))
+                            if (inner.Length == 0)
+                            {
+                                sb.Append("\\[\\]");
+                            }
+                            else if (inner.StartsWith("!", StringComparison.Ordinal))
                             {
                                 sb.Append("[^").Append(Regex.Escape(inner.Substring(1))).Append(']');
                             }
@@ -139,7 +166,7 @@ namespace RazorFormatter.Core.Configuration
             }
 
             sb.Append('$');
-            return new Regex(sb.ToString(), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            return new Regex(sb.ToString(), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, s_regexTimeout);
         }
 
         private static int FindMatchingBrace(string s, int openIndex)
@@ -158,4 +185,3 @@ namespace RazorFormatter.Core.Configuration
         }
     }
 }
-

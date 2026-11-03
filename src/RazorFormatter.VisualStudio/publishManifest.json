@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json.schemastore.org/vsix-publish",
+  "categories": [
+    "Coding",
+    "Formatters",
+    "Web Development"
+  ],
+  "identity": {
+    "internalName": "RazorFormatterVisualStudio"
+  },
+  "overview": "overview.md",
+  "priceCategory": "free",
+  "publisher": "razor-code-formatter",
+  "private": false,
+  "tags": [
+    "razor",
+    "formatter",
+    "blazor",
+    "cshtml",
+    "aspnetcore",
+    "csharp",
+    "html"
+  ],
+  "assetFiles": [
+    {
+      "id": "Microsoft.VisualStudio.Ide.Default",
+      "path": "overview.md",
+      "type": "text/markdown"
+    }
+  ]
+}
+

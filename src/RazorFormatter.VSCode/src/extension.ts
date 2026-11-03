@@ -197,7 +197,7 @@ function runOneShotCli(
             args.push('--path', filePath);
         }
 
-        const child = spawn(resolution.command, args, { shell: !resolution.isDirectExecutable });
+        const child = spawn(resolution.command, args, { shell: false });
 
         // Process cancellation: terminate the child process immediately
         const cancelListener = token.onCancellationRequested(() => {
