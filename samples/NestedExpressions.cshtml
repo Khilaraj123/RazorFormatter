@@ -1,0 +1,13 @@
+@page
+@model ExpressionModel
+
+<div class="summary">
+    @* Razor comment describing calculation *@
+    <p>Status: @(Model.Count > 0 ? "Active" : "Inactive")</p>
+    <p>Value: @(string.Format("{0:C}", Model.Price))</p>
+
+    <div data-count="@(Model.Items?.Count ?? 0)" data-custom="value > 10">
+        <span>@(Model.CalculateScore(10, 20))</span>
+    </div>
+</div>
+

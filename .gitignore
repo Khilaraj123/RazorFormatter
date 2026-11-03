@@ -1,0 +1,13 @@
+# .NET build output
+**/bin/
+**/obj/
+.vs/
+
+# Node.js and VS Code extension build output
+**/node_modules/
+src/RazorFormatter.VSCode/dist/
+*.vsix
+
+# IDE and OS files
+.DS_Store
+Thumbs.db

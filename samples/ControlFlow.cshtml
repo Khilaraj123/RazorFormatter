@@ -1,0 +1,27 @@
+@page
+@model ControlFlowModel
+
+<div class="user-list">
+    @if (Model.Users == null || !Model.Users.Any())
+    {
+        <div class="empty-state">
+            <p>No users found.</p>
+        </div>
+    }
+    else
+    {
+        <ul>
+            @foreach (var user in Model.Users)
+            {
+                <li>
+                    <span>@user.Name</span>
+                    @if (user.IsAdmin)
+                    {
+                        <span class="badge">Admin</span>
+                    }
+                </li>
+            }
+        </ul>
+    }
+</div>
+

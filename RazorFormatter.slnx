@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RazorFormatter.Cli/RazorFormatter.Cli.csproj" />
+    <Project Path="src/RazorFormatter.Core/RazorFormatter.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RazorFormatter.Tests/RazorFormatter.Tests.csproj" />
+  </Folder>
+</Solution>

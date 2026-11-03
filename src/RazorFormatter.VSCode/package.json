@@ -1,0 +1,69 @@
+{
+  "name": "razor-formatter",
+  "displayName": "Razor Formatter",
+  "description": "Prettier-grade Razor (.cshtml / .razor) formatter for VS Code, Cursor, and Antigravity",
+  "version": "0.1.0",
+  "publisher": "razor-formatter",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Formatters"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:aspnetcorerazor",
+    "onLanguage:razor",
+    "onLanguage:html"
+  ],
+  "contributes": {
+    "configuration": {
+      "title": "Razor Formatter",
+      "properties": {
+        "razorFormatter.serverMode": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run Razor Formatter as a persistent background daemon for sub-millisecond formatting without process restart overhead."
+        },
+        "razorFormatter.indentSize": {
+          "type": "integer",
+          "default": 4,
+          "description": "Number of spaces per indentation level."
+        },
+        "razorFormatter.indentStyle": {
+          "type": "string",
+          "enum": [
+            "space",
+            "tab"
+          ],
+          "default": "space",
+          "description": "Indentation character style."
+        },
+        "razorFormatter.attributeLayout": {
+          "type": "string",
+          "enum": [
+            "preserve",
+            "one-per-line",
+            "single-line"
+          ],
+          "default": "preserve",
+          "description": "HTML and Tag Helper attribute layout strategy."
+        },
+        "razorFormatter.cliPath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional custom path to the razor-format CLI executable or .dll."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.4.0"
+  }
+}
