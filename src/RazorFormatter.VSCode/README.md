@@ -86,10 +86,11 @@ razor_collapse_empty_lines = true
 - **GitHub Repository**: [Khilaraj123/RazorFormatter](https://github.com/Khilaraj123/RazorFormatter)
 - **Report an Issue**: [GitHub Issues](https://github.com/Khilaraj123/RazorFormatter/issues)
 - **Visual Studio 2022 Extension**: [Marketplace](https://marketplace.visualstudio.com/items?itemName=razor-formatter.razorformat)
-- **.NET Global Tool**: `dotnet tool install -g RazorFormatter`
+- **.NET Global Tool**: `dotnet tool install -g RazorCodeFormatter`
 
 ---
 
 ## 📄 License
 
 Licensed under the [MIT License](https://github.com/Khilaraj123/RazorFormatter/blob/main/LICENSE).
+

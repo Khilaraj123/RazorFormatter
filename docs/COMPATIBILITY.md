@@ -71,3 +71,4 @@ This guide details IDE support, operating system compatibility, supported Razor/
    - Razor files with conditional compilation `#if DEBUG` directives inside `@code` blocks are preserved as literal lines without indentation alteration.
 3. **Range Formatting**:
    - Document-level formatting is the primary supported operation. Partial range formatting on an incomplete syntax snippet will expand to the nearest enclosing element/block boundary.
+

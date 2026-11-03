@@ -72,3 +72,4 @@ Corrupted Token Spans: 0
    - All static patterns are precompiled with `RegexOptions.Compiled`.
 3. **Discrete `TextChange` Localized Diffing**:
    - Instead of replacing whole file buffers, the engine diffs line prefixes and attribute blocks, emitting atomic replace/insert/delete instructions. This preserves editor selection markers and minimizes LSP transport size.
+

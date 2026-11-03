@@ -14,7 +14,7 @@
     <!-- Global Tool Packaging -->
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>razor-format</ToolCommandName>
-    <PackageId>RazorFormatter</PackageId>
+    <PackageId>RazorCodeFormatter</PackageId>
     <Version>1.0.0</Version>
     <Authors>RazorFormatter Contributors</Authors>
     <Description>Fast, deterministic, Prettier-grade code formatter for ASP.NET Core Razor (.cshtml and .razor) files.</Description>

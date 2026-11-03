@@ -2,6 +2,7 @@
 **/bin/
 **/obj/
 artifacts/
+dist/
 .vs/
 *.user
 *.userosscache

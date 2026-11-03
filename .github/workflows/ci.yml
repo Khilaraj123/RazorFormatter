@@ -76,3 +76,4 @@ jobs:
           path: |
             artifacts/tool/*.nupkg
             artifacts/vsix/*.vsix
+

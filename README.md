@@ -99,7 +99,7 @@ RazorFormatter/
 Install globally via NuGet to format Razor files directly from terminal or CI/CD pipelines:
 ```bash
 # Install globally
-dotnet tool install -g RazorFormatter
+dotnet tool install -g RazorCodeFormatter
 
 # Format files or directories in-place
 razor-format -w ./Views

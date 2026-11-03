@@ -155,7 +155,7 @@ jobs:
           files: |
             artifacts/vsix/razor-code-formatter-${{ env.VERSION }}.vsix
             artifacts/vsix/RazorFormatter.VisualStudio-${{ env.VERSION }}.vsix
-            artifacts/tool/RazorFormatter.${{ env.VERSION }}.nupkg
+            artifacts/tool/RazorCodeFormatter.${{ env.VERSION }}.nupkg
             artifacts/dist/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
