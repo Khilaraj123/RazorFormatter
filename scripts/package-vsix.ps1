@@ -14,7 +14,8 @@
 
 [CmdletBinding()]
 param(
-    [string]$Version = "1.0.0",
+    [string]$Version = "0.1.3",
+    [string]$VSVersion = "",
     [string]$Configuration = "Release",
     [string]$OutputDir = ""
 )
@@ -85,9 +86,21 @@ finally {
 # 2. Package Visual Studio 2022 Extension (.vsix)
 # -----------------------------------------------------------------------------
 Write-Host "`n[2/2] Packaging Visual Studio 2022 Extension..." -ForegroundColor Yellow
-$vsProj = Join-Path $repoRoot "src\RazorFormatter.VisualStudio\RazorFormatter.VisualStudio.csproj"
-$vsVsixPath = Join-Path $outputFullPath "RazorFormatter.VisualStudio-$Version.vsix"
 $manifestSource = Join-Path $repoRoot "src\RazorFormatter.VisualStudio\source.extension.vsixmanifest"
+[xml]$manifestXml = Get-Content $manifestSource
+$effectiveVSVersion = $VSVersion
+if ([string]::IsNullOrWhiteSpace($effectiveVSVersion)) {
+    $effectiveVSVersion = $manifestXml.PackageManifest.Metadata.Identity.Version
+    if ([string]::IsNullOrWhiteSpace($effectiveVSVersion) -or $effectiveVSVersion.StartsWith("0.")) {
+        $effectiveVSVersion = "1.0.1"
+    }
+}
+$manifestXml.PackageManifest.Metadata.Identity.Version = $effectiveVSVersion
+$manifestXml.Save((Resolve-Path $manifestSource))
+Write-Host "Visual Studio Extension Version: $effectiveVSVersion" -ForegroundColor Cyan
+
+$vsProj = Join-Path $repoRoot "src\RazorFormatter.VisualStudio\RazorFormatter.VisualStudio.csproj"
+$vsVsixPath = Join-Path $outputFullPath "RazorFormatter.VisualStudio-$effectiveVSVersion.vsix"
 
 dotnet build $vsProj --configuration $Configuration
 
@@ -143,6 +156,12 @@ try {
     }
 
     Write-Host " -> Visual Studio extension packaged: $vsVsixPath" -ForegroundColor Green
+
+    $distDir = Join-Path $repoRoot "dist"
+    if (Test-Path $distDir) {
+        Copy-Item $vsVsixPath (Join-Path $distDir (Split-Path $vsVsixPath -Leaf)) -Force
+    }
+    Copy-Item $vsVsixPath (Join-Path $outputFullPath "RazorFormatter.VisualStudio.vsix") -Force
 }
 finally {
     if (Test-Path $tempStaging) {
