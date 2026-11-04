@@ -135,6 +135,26 @@ namespace RazorFormatter.Cli.Server
 
                 if (req == null) continue;
 
+                if (string.Equals(req.Method, "initialize", StringComparison.OrdinalIgnoreCase))
+                {
+                    SendResponse(new ServerResponse
+                    {
+                        Id = req.Id,
+                        Result = new
+                        {
+                            serverVersion = "1.0.0",
+                            protocolVersion = "2.0",
+                            capabilities = new
+                            {
+                                documentFormatting = true,
+                                rangeFormatting = true,
+                                documentCheck = true
+                            }
+                        }
+                    });
+                    continue;
+                }
+
                 if (string.Equals(req.Method, "shutdown", StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(req.Method, "exit", StringComparison.OrdinalIgnoreCase))
                 {
@@ -150,7 +170,8 @@ namespace RazorFormatter.Cli.Server
 
                 try
                 {
-                    if (string.Equals(req.Method, "format", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(req.Method, "format", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(req.Method, "formatDocument", StringComparison.OrdinalIgnoreCase))
                     {
                         var res = HandleFormat(req.Params);
                         SendResponse(new ServerResponse { Id = req.Id, Result = res });
@@ -160,6 +181,22 @@ namespace RazorFormatter.Cli.Server
                         var res = HandleFormatRange(req.Params);
                         SendResponse(new ServerResponse { Id = req.Id, Result = res });
                     }
+                    else if (string.Equals(req.Method, "checkDocument", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var text = req.Params?.Text ?? string.Empty;
+                        var options = BuildOptions(req.Params);
+                        var result = _engine.Format(text, options);
+                        SendResponse(new ServerResponse
+                        {
+                            Id = req.Id,
+                            Result = new
+                            {
+                                needsFormatting = result.Changes.Count > 0,
+                                changeCount = result.Changes.Count,
+                                wasSkipped = result.WasSkipped
+                            }
+                        });
+                    }
                     else
                     {
                         SendResponse(new ServerResponse { Id = req.Id, Error = $"Unknown method: {req.Method}" });
@@ -167,6 +204,7 @@ namespace RazorFormatter.Cli.Server
                 }
                 catch (Exception ex)
                 {
+                    Console.Error.WriteLine($"[ServerError] Exception handling '{req.Method}': {ex}");
                     SendResponse(new ServerResponse { Id = req.Id, Error = ex.ToString() });
                 }
             }

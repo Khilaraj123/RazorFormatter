@@ -101,11 +101,18 @@ Install globally via NuGet to format Razor files directly from terminal or CI/CD
 # Install globally
 dotnet tool install -g RazorCodeFormatter
 
-# Format files or directories in-place
-razor-format -w ./Views
+# Format one file in place
+razorfmt Views/Home/Index.cshtml
 
-# Check if any files require formatting (CI mode)
-razor-format --check ./Pages
+# Format an entire directory or project in place
+razorfmt ./Views
+razorfmt .
+
+# Check if any files require formatting (CI mode, exits with code 1 if unformatted)
+razorfmt check .
+
+# Display unified differences
+razorfmt diff .
 ```
 
 ### 2. VS Code, Cursor, and Google Antigravity
@@ -133,43 +140,60 @@ The CLI formats `.cshtml` and `.razor` files in-place, validates files in CI/CD 
 ### Basic Commands
 
 ```bash
-# Print formatted output to stdout
-dotnet run --project src/RazorFormatter.Cli -- ./samples/Basic.cshtml
+# Format one file in-place (default)
+razorfmt Views/Home/Index.cshtml
 
-# Format files or directories in-place (-w / --write)
-dotnet run --project src/RazorFormatter.Cli -- -w ./samples
+# Format an entire directory or project in-place
+razorfmt ./Views
+razorfmt .
 
-# Check if files need formatting (-c / --check, returns exit code 1 if unformatted)
-dotnet run --project src/RazorFormatter.Cli -- --check ./samples
+# Check if files need formatting without modifying them (CI check mode)
+razorfmt check .
+
+# Display unified differences
+razorfmt diff .
+
+# Print formatted output to stdout instead of overwriting
+razorfmt --stdout ./samples/Basic.cshtml
 
 # Format standard input to standard output
-cat ./samples/Basic.cshtml | dotnet run --project src/RazorFormatter.Cli
+cat ./samples/Basic.cshtml | razorfmt
 
 # Output machine-readable JSON changes
-dotnet run --project src/RazorFormatter.Cli -- --changes-json ./samples/Basic.cshtml
-
-# Specify an explicit .editorconfig file
-dotnet run --project src/RazorFormatter.Cli -- --config .editorconfig -w ./samples
+razorfmt --changes-json ./samples/Basic.cshtml
 
 # Launch persistent stdio JSON-RPC server (used by editor extensions)
-dotnet run --project src/RazorFormatter.Cli -- --server
+razorfmt --server
 ```
 
-### CLI Options
+### CLI Options & Subcommands
 
-| Option | Description |
+| Command / Option | Description |
 |---|---|
-| `-w`, `--write` | Format and overwrite files in-place |
-| `-c`, `--check` | Check formatting status; returns exit code `1` if changes are needed, `0` if formatted |
+| `razorfmt <path>` | Format file(s) or directories in place (gofmt-style default) |
+| `razorfmt check <path>`, `-c` | Check formatting; returns exit code `1` if changes needed, `0` if clean |
+| `razorfmt diff <path>`, `-d` | Display unified formatting differences; exits with `1` if changes needed |
+| `--stdout` | Stream formatted output to stdout instead of writing in place |
 | `--server` | Start persistent stdio JSON-RPC server for IDE extensions |
 | `--changes-json` | Output changes as structured JSON instead of formatted text |
 | `--config <path>` | Path to an explicit `.editorconfig` file |
-| `--ignore-file <path>` | Path to a custom ignore file (default: `.razorignore`) |
+| `--ignore <pattern>` | Pattern to ignore (can be specified multiple times) |
+| `--verbose` | Display detailed processing statistics |
 | `--indent <n>` | Number of spaces per indentation level (default: `4`) |
 | `--tab` | Use tabs for indentation instead of spaces |
 | `--lf` | Enforce Unix line endings (`\n`) |
 | `--crlf` | Enforce Windows line endings (`\r\n`) |
+| `-v`, `--version` | Display installed version |
 | `-h`, `--help` | Display help and usage information |
+
+### Standard Exit Codes
+
+| Exit Code | Meaning |
+|---|---|
+| `0` | Success; no formatting issues found or files formatted |
+| `1` | Formatting differences found in `check` or `diff` mode |
+| `2` | Invalid arguments or configuration error |
+| `3` | File access, I/O, or formatting failure |
 
 ---
 

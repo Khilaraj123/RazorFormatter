@@ -81,7 +81,138 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.languages.registerDocumentFormattingEditProvider(selector, docProvider),
-        vscode.languages.registerDocumentRangeFormattingEditProvider(selector, rangeProvider)
+        vscode.languages.registerDocumentRangeFormattingEditProvider(selector, rangeProvider),
+
+        // Command: Format Current Document
+        vscode.commands.registerCommand('razorFormatter.formatDocument', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                vscode.window.showInformationMessage('RazorFormatter: No active document to format.');
+                return;
+            }
+            await vscode.commands.executeCommand('editor.action.formatDocument');
+        }),
+
+        // Command: Format Workspace
+        vscode.commands.registerCommand('razorFormatter.formatWorkspace', async () => {
+            const files = await vscode.workspace.findFiles('**/*.{cshtml,razor}', '**/node_modules/**');
+            if (files.length === 0) {
+                vscode.window.showInformationMessage('RazorFormatter: No .cshtml or .razor files found in workspace.');
+                return;
+            }
+
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: 'RazorFormatter: Formatting workspace...',
+                cancellable: true
+            }, async (progress, token) => {
+                let formattedCount = 0;
+                const total = files.length;
+
+                for (let i = 0; i < total; i++) {
+                    if (token.isCancellationRequested) break;
+                    const uri = files[i];
+                    progress.report({ message: `${i + 1}/${total}: ${vscode.workspace.asRelativePath(uri)}`, increment: 100 / total });
+
+                    try {
+                        const doc = await vscode.workspace.openTextDocument(uri);
+                        const wsConfig = vscode.workspace.getConfiguration('razorFormatter', uri);
+                        const options: vscode.FormattingOptions = {
+                            tabSize: wsConfig.get<number>('indentSize', 4),
+                            insertSpaces: wsConfig.get<string>('indentStyle', 'space') === 'space'
+                        };
+                        const edits = await formatDocument(context, doc, options, token);
+                        if (edits.length > 0) {
+                            const wsEdit = new vscode.WorkspaceEdit();
+                            wsEdit.set(uri, edits);
+                            await vscode.workspace.applyEdit(wsEdit);
+                            await doc.save();
+                            formattedCount++;
+                        }
+                    } catch (err: any) {
+                        outputChannel.appendLine(`[Workspace Format Error] ${uri.fsPath}: ${err.message}`);
+                    }
+                }
+
+                if (config.get<boolean>('showNotifications', true)) {
+                    vscode.window.showInformationMessage(`RazorFormatter: Checked ${total} files, formatted ${formattedCount} files.`);
+                }
+            });
+        }),
+
+        // Command: Check Formatting
+        vscode.commands.registerCommand('razorFormatter.checkFormatting', async () => {
+            const files = await vscode.workspace.findFiles('**/*.{cshtml,razor}', '**/node_modules/**');
+            if (files.length === 0) {
+                vscode.window.showInformationMessage('RazorFormatter: No .cshtml or .razor files found in workspace.');
+                return;
+            }
+
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: 'RazorFormatter: Checking formatting...',
+                cancellable: true
+            }, async (progress, token) => {
+                const unformatted: vscode.Uri[] = [];
+                const total = files.length;
+
+                for (let i = 0; i < total; i++) {
+                    if (token.isCancellationRequested) break;
+                    const uri = files[i];
+                    progress.report({ message: `${i + 1}/${total}: ${vscode.workspace.asRelativePath(uri)}`, increment: 100 / total });
+
+                    try {
+                        const doc = await vscode.workspace.openTextDocument(uri);
+                        const wsConfig = vscode.workspace.getConfiguration('razorFormatter', uri);
+                        const options: vscode.FormattingOptions = {
+                            tabSize: wsConfig.get<number>('indentSize', 4),
+                            insertSpaces: wsConfig.get<string>('indentStyle', 'space') === 'space'
+                        };
+                        const edits = await formatDocument(context, doc, options, token);
+                        if (edits.length > 0) {
+                            unformatted.push(uri);
+                        }
+                    } catch {
+                        // ignore read errors
+                    }
+                }
+
+                if (unformatted.length === 0) {
+                    vscode.window.showInformationMessage(`RazorFormatter: All ${total} Razor files are formatted cleanly!`);
+                } else {
+                    const viewLog = 'View Output';
+                    const choice = await vscode.window.showWarningMessage(
+                        `RazorFormatter: Found ${unformatted.length} file(s) that need formatting.`,
+                        viewLog
+                    );
+                    if (choice === viewLog) {
+                        outputChannel.show();
+                        outputChannel.appendLine('\nFiles needing formatting:');
+                        for (const u of unformatted) {
+                            outputChannel.appendLine(` - ${vscode.workspace.asRelativePath(u)}`);
+                        }
+                    }
+                }
+            });
+        }),
+
+        // Command: Restart Formatter Server
+        vscode.commands.registerCommand('razorFormatter.restartServer', async () => {
+            outputChannel.appendLine('[Server] Restarting formatting server...');
+            if (serverClient) {
+                serverClient.dispose();
+                serverClient = null;
+            }
+            try {
+                const resolution = resolveCli(context);
+                serverClient = new FormatterServerClient(resolution, outputChannel);
+                await serverClient.start();
+                context.subscriptions.push(serverClient);
+                vscode.window.showInformationMessage('RazorFormatter: Formatter server restarted successfully.');
+            } catch (err: any) {
+                vscode.window.showErrorMessage(`RazorFormatter: Failed to restart server: ${err.message}`);
+            }
+        })
     );
 }
 

@@ -29,6 +29,28 @@
     }
   },
   "contributes": {
+    "commands": [
+      {
+        "command": "razorFormatter.formatDocument",
+        "title": "RazorFormatter: Format Document",
+        "category": "RazorFormatter"
+      },
+      {
+        "command": "razorFormatter.formatWorkspace",
+        "title": "RazorFormatter: Format Workspace",
+        "category": "RazorFormatter"
+      },
+      {
+        "command": "razorFormatter.checkFormatting",
+        "title": "RazorFormatter: Check Formatting",
+        "category": "RazorFormatter"
+      },
+      {
+        "command": "razorFormatter.restartServer",
+        "title": "RazorFormatter: Restart Formatter Server",
+        "category": "RazorFormatter"
+      }
+    ],
     "configuration": {
       "title": "Razor Formatter",
       "properties": {
@@ -36,6 +58,11 @@
           "type": "boolean",
           "default": true,
           "description": "Run Razor Formatter as a persistent background daemon for sub-millisecond formatting without process restart overhead."
+        },
+        "razorFormatter.showNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show status notifications for workspace formatting and check operations."
         },
         "razorFormatter.indentSize": {
           "type": "integer",
@@ -65,7 +92,7 @@
           "type": "string",
           "default": "",
           "scope": "machine",
-          "description": "Optional custom path to the razor-format CLI executable or .dll. Configurable only in User/Machine settings for security."
+          "description": "Optional custom path to the razorfmt CLI executable or .dll. Configurable only in User/Machine settings for security."
         }
       }
     }

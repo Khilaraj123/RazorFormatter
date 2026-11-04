@@ -39,9 +39,16 @@ Add the following to your VS Code / Cursor `settings.json`:
 }
 ```
 
-### 2. Format a File
+### 2. Format a File & Available Commands
 - **Format Document**: `Shift + Alt + F` (Windows) / `Shift + Option + F` (macOS) / `Ctrl + Shift + I` (Linux).
+- **Format Selection**: `Ctrl + K, Ctrl + F`.
 - **Format on Save**: Automatically runs whenever you save a Razor file.
+
+#### Command Palette Commands (`Ctrl + Shift + P` / `Cmd + Shift + P`)
+- **RazorFormatter: Format Document**: Formats the active `.cshtml` or `.razor` file.
+- **RazorFormatter: Format Workspace**: Recursively formats all Razor files across your entire project workspace with progress reporting.
+- **RazorFormatter: Check Formatting**: Scans the workspace and warns you if any files have unformatted code.
+- **RazorFormatter: Restart Formatter Server**: Restarts the background formatting daemon.
 
 ---
 
