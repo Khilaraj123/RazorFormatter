@@ -37,14 +37,16 @@ export function resolveCli(context: vscode.ExtensionContext, documentUri?: vscod
 
     // 3. Check global tool on PATH (only in trusted workspaces)
     if (vscode.workspace.isTrusted) {
-        try {
-            const whichCmd = process.platform === 'win32' ? 'where razor-format' : 'which razor-format';
-            const result = execSync(whichCmd, { stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000 }).toString().trim().split('\n')[0].trim();
-            if (result && fs.existsSync(result)) {
-                return { command: result, args: [], isDirectExecutable: true };
+        for (const candidate of ['razorfmt', 'razor-format']) {
+            try {
+                const whichCmd = process.platform === 'win32' ? `where ${candidate}` : `which ${candidate}`;
+                const result = execSync(whichCmd, { stdio: ['ignore', 'pipe', 'ignore'], timeout: 2000 }).toString().trim().split('\n')[0].trim();
+                if (result && fs.existsSync(result)) {
+                    return { command: result, args: [], isDirectExecutable: true };
+                }
+            } catch {
+                // Not found on PATH
             }
-        } catch {
-            // Not found on PATH
         }
     }
 
@@ -64,9 +66,9 @@ export function resolveCli(context: vscode.ExtensionContext, documentUri?: vscod
         }
     }
 
-    // Default fallback: global 'razor-format' tool
+    // Default fallback: global 'razorfmt' tool
     return {
-        command: 'razor-format',
+        command: 'razorfmt',
         args: [],
         isDirectExecutable: true
     };
