@@ -25,3 +25,4 @@ RazorFormatter System
 ```
 
 For extension-specific internals, see [**Extension Architecture**](./EXTENSION_ARCHITECTURE.md).
+

@@ -243,3 +243,4 @@ The extension registers the following user-facing commands in VS Code:
 1. **Workspace Trust Integration**: Executing binaries on the user's `PATH` or launching `dotnet run` requires an explicitly **Trusted Workspace** (`vscode.workspace.isTrusted`). In untrusted workspaces (e.g., untrusted cloned repositories), external tool execution is restricted to prevent arbitrary code execution.
 2. **Machine-Scoped Path Setting**: The `razorFormatter.cliPath` configuration is strictly defined with `"scope": "machine"` in [`package.json`](file:///d:/user/Extensions/Ide/RazorFormatter/src/RazorFormatter.VSCode/package.json#L94). This prevents malicious repositories from bundling a rogue executable in `.vscode/settings.json` to exploit the user.
 3. **No Shell Execution**: All process spawns explicitly specify `{ shell: false }`. Executables and arguments are passed as discrete token arrays, preventing shell injection vulnerabilities.
+

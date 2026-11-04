@@ -50,6 +50,15 @@ $vscodeVsixPath = Join-Path $outputFullPath "$extName-$Version.vsix"
 
 Push-Location $vscodeDir
 try {
+    # Publish CLI backend into bin/ so the extension bundles it directly
+    $binDir = Join-Path $vscodeDir "bin"
+    if (Test-Path $binDir) { Remove-Item -Recurse -Force $binDir }
+    Write-Host "Publishing RazorFormatter.Cli backend into extension bin directory..." -ForegroundColor Yellow
+    $cliProj = Join-Path $repoRoot "src\RazorFormatter.Cli\RazorFormatter.Cli.csproj"
+    dotnet publish $cliProj --configuration $Configuration --output $binDir
+    # Remove *.pdb to keep extension package clean and compact
+    Get-ChildItem -Path $binDir -Filter "*.pdb" | Remove-Item -Force
+
     # Ensure dependencies and fresh TypeScript compilation
     if (-not (Test-Path "node_modules")) {
         Write-Host "Installing npm dependencies in VSCode extension..."
@@ -60,6 +69,13 @@ try {
     Write-Host "Executing @vscode/vsce package..."
     npx @vscode/vsce package --no-dependencies -o $vscodeVsixPath
     Write-Host " -> VS Code extension packaged: $vscodeVsixPath" -ForegroundColor Green
+
+    # Copy to dist/ and create unversioned alias in output dir
+    $distDir = Join-Path $repoRoot "dist"
+    if (Test-Path $distDir) {
+        Copy-Item $vscodeVsixPath (Join-Path $distDir (Split-Path $vscodeVsixPath -Leaf)) -Force
+    }
+    Copy-Item $vscodeVsixPath (Join-Path $outputFullPath "$extName.vsix") -Force
 }
 finally {
     Pop-Location

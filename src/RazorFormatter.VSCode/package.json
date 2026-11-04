@@ -2,7 +2,7 @@
   "name": "razor-code-formatter",
   "displayName": "Razor Formatter",
   "description": "Prettier-grade Razor (.cshtml / .razor) formatter for VS Code, Cursor, and Antigravity",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "razor-formatter",
   "license": "MIT",
   "icon": "images/icon.png",
@@ -48,6 +48,11 @@
       {
         "command": "razorFormatter.restartServer",
         "title": "RazorFormatter: Restart Formatter Server",
+        "category": "RazorFormatter"
+      },
+      {
+        "command": "razorFormatter.installCli",
+        "title": "RazorFormatter: Install or Update .NET Tool",
         "category": "RazorFormatter"
       }
     ],

@@ -63,12 +63,9 @@ jobs:
         run: dotnet pack src/RazorFormatter.Cli/RazorFormatter.Cli.csproj --configuration Release --output artifacts/tool
 
       - name: Package VS Code Extension
-        working-directory: src/RazorFormatter.VSCode
+        shell: pwsh
         run: |
-          New-Item -ItemType Directory -Path ../../artifacts/vsix -Force | Out-Null
-          npm ci
-          npm run build
-          npx @vscode/vsce package --no-dependencies -o ../../artifacts/vsix/razor-code-formatter.vsix
+          ./scripts/package-vsix.ps1 -Version "0.1.3" -Configuration Release -OutputDir artifacts/vsix
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4

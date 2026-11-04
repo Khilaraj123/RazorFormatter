@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { spawn } from 'child_process';
-import { resolveCli } from './resolver';
+import { resolveCli, ensureCliInstalled, installOrUpdateCli } from './resolver';
 import { FormatterServerClient, ServerFormatResult, ServerTextChange } from './serverClient';
 
 let outputChannel: vscode.OutputChannel;
@@ -24,16 +24,21 @@ export function activate(context: vscode.ExtensionContext) {
     const useServer = config.get<boolean>('serverMode', true);
 
     if (useServer) {
-        try {
-            const resolution = resolveCli(context);
-            serverClient = new FormatterServerClient(resolution, outputChannel);
-            serverClient.start().catch(err => {
-                outputChannel.appendLine(`[Warning] Could not pre-start formatting server: ${err.message}. Will retry on format request.`);
-            });
-            context.subscriptions.push(serverClient);
-        } catch (err: any) {
-            outputChannel.appendLine(`[Warning] Failed to initialize server: ${err.message}`);
-        }
+        ensureCliInstalled(context, outputChannel).then(resolution => {
+            if (resolution && !serverClient) {
+                try {
+                    serverClient = new FormatterServerClient(resolution, outputChannel);
+                    serverClient.start().catch(err => {
+                        outputChannel.appendLine(`[Warning] Could not pre-start formatting server: ${err.message}. Will retry on format request.`);
+                    });
+                    context.subscriptions.push(serverClient);
+                } catch (err: any) {
+                    outputChannel.appendLine(`[Warning] Failed to initialize server: ${err.message}`);
+                }
+            }
+        }).catch(err => {
+            outputChannel.appendLine(`[Warning] Tool detection check failed: ${err.message}`);
+        });
     }
 
     // Document Formatting Provider (Full Document & Format-on-Save)
@@ -204,13 +209,27 @@ export function activate(context: vscode.ExtensionContext) {
                 serverClient = null;
             }
             try {
-                const resolution = resolveCli(context);
+                const resolution = (await ensureCliInstalled(context, outputChannel)) || resolveCli(context);
                 serverClient = new FormatterServerClient(resolution, outputChannel);
                 await serverClient.start();
                 context.subscriptions.push(serverClient);
                 vscode.window.showInformationMessage('RazorFormatter: Formatter server restarted successfully.');
             } catch (err: any) {
                 vscode.window.showErrorMessage(`RazorFormatter: Failed to restart server: ${err.message}`);
+            }
+        }),
+
+        // Command: Install or Update .NET Tool
+        vscode.commands.registerCommand('razorFormatter.installCli', async () => {
+            const resolution = await installOrUpdateCli(context, outputChannel);
+            if (resolution) {
+                if (serverClient) {
+                    serverClient.dispose();
+                    serverClient = null;
+                }
+                serverClient = new FormatterServerClient(resolution, outputChannel);
+                await serverClient.start();
+                context.subscriptions.push(serverClient);
             }
         })
     );
@@ -237,6 +256,19 @@ async function formatDocument(
         indentStyle: options.insertSpaces ? 'space' : 'tab',
         attributeLayout: config.get<string>('attributeLayout')
     };
+
+    if (useServer && !serverClient) {
+        const resolution = await ensureCliInstalled(context, outputChannel, document.uri);
+        if (resolution) {
+            try {
+                serverClient = new FormatterServerClient(resolution, outputChannel);
+                await serverClient.start();
+                context.subscriptions.push(serverClient);
+            } catch (err: any) {
+                outputChannel.appendLine(`[Server Fallback] Server start error: ${err.message}. Falling back to CLI process.`);
+            }
+        }
+    }
 
     if (useServer && serverClient) {
         try {
@@ -271,6 +303,19 @@ async function formatRange(
         attributeLayout: config.get<string>('attributeLayout')
     };
 
+    if (useServer && !serverClient) {
+        const resolution = await ensureCliInstalled(context, outputChannel, document.uri);
+        if (resolution) {
+            try {
+                serverClient = new FormatterServerClient(resolution, outputChannel);
+                await serverClient.start();
+                context.subscriptions.push(serverClient);
+            } catch (err: any) {
+                outputChannel.appendLine(`[Server Fallback] Server start error: ${err.message}. Falling back to CLI process.`);
+            }
+        }
+    }
+
     if (useServer && serverClient) {
         try {
             const result = await serverClient.formatRange(text, startOffset, endOffset, filePath, formatOpts, token);
@@ -302,7 +347,7 @@ function convertResultToEdits(document: vscode.TextDocument, result: ServerForma
     return edits;
 }
 
-function runOneShotCli(
+async function runOneShotCli(
     context: vscode.ExtensionContext,
     document: vscode.TextDocument,
     text: string,
@@ -310,8 +355,9 @@ function runOneShotCli(
     options: { indentSize?: number; indentStyle?: string; attributeLayout?: string },
     token: vscode.CancellationToken
 ): Promise<vscode.TextEdit[]> {
+    const resolution = (await ensureCliInstalled(context, outputChannel, document.uri)) || resolveCli(context, document.uri);
+
     return new Promise((resolve, reject) => {
-        const resolution = resolveCli(context, document.uri);
         const args = [...resolution.args, '--changes-json'];
 
         if (options.indentStyle === 'tab') {
@@ -354,6 +400,12 @@ function runOneShotCli(
         child.on('error', err => {
             cancelListener.dispose();
             outputChannel.appendLine(`[CLI Process Error] ${err.message}`);
+            vscode.window.showErrorMessage(
+                `Razor Formatter: Could not execute formatting CLI (${err.message}). Check output channel.`,
+                'View Output'
+            ).then(choice => {
+                if (choice === 'View Output') outputChannel.show();
+            });
             reject(err);
         });
 
