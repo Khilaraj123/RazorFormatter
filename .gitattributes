@@ -1,0 +1,37 @@
+# Enforce deterministic LF line endings across all operating systems
+* text=auto eol=lf
+
+# Source code and manifests
+*.cs text eol=lf
+*.cshtml text eol=lf
+*.razor text eol=lf
+*.json text eol=lf
+*.ts text eol=lf
+*.js text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.slnx text eol=lf
+*.csproj text eol=lf
+*.editorconfig text eol=lf
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+*.ps1 text eol=lf
+*.sh text eol=lf
+
+# Windows batch files
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.vsix binary
+*.dll binary
+*.exe binary
+*.nupkg binary
+*.zip binary
+*.tar.gz binary

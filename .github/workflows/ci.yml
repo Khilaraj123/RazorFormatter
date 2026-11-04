@@ -24,13 +24,6 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-          cache-dependency-path: 'src/RazorFormatter.VSCode/package.json'
-
       - name: Restore Solution
         run: dotnet restore RazorFormatter.slnx
 
@@ -38,7 +31,14 @@ jobs:
         run: dotnet build RazorFormatter.slnx --configuration Release --no-restore
 
       - name: Run Test Suite
-        run: dotnet test RazorFormatter.slnx --configuration Release --no-build --logger "console;verbosity=normal"
+        run: dotnet test RazorFormatter.slnx --configuration Release --no-build --logger "console;verbosity=normal" --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload Test Results on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: '**/test-results.trx'
 
   package-artifacts:
     name: Package Tool & Extension Artifacts
@@ -57,7 +57,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Package .NET Global Tool
         run: dotnet pack src/RazorFormatter.Cli/RazorFormatter.Cli.csproj --configuration Release --output artifacts/tool
@@ -76,4 +76,3 @@ jobs:
           path: |
             artifacts/tool/*.nupkg
             artifacts/vsix/*.vsix
-
