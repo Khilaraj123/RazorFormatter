@@ -2,7 +2,7 @@
   "name": "razor-code-formatter",
   "displayName": "Razor Formatter",
   "description": "Prettier-grade Razor (.cshtml / .razor) formatter for VS Code, Cursor, and Antigravity",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "razor-formatter",
   "license": "MIT",
   "icon": "images/icon.png",
