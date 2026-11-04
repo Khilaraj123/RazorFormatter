@@ -65,6 +65,7 @@ jobs:
       - name: Package VS Code Extension
         working-directory: src/RazorFormatter.VSCode
         run: |
+          New-Item -ItemType Directory -Path ../../artifacts/vsix -Force | Out-Null
           npm ci
           npm run build
           npx @vscode/vsce package --no-dependencies -o ../../artifacts/vsix/razor-code-formatter.vsix
