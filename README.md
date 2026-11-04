@@ -1,7 +1,9 @@
 # RazorFormatter
 
-[![Build & Test](https://img.shields.io/badge/tests-124%20passed-brightgreen.svg)](#running-tests)
+[![Build & Test](https://img.shields.io/badge/tests-131%20passed-brightgreen.svg)](#running-tests)
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue.svg?logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=razor-formatter.razor-code-formatter)
+[![Visual Studio Marketplace](https://img.shields.io/badge/Visual%20Studio-Marketplace-purple.svg?logo=visualstudio)](https://marketplace.visualstudio.com/items?itemName=razor-formatter.razorfmt)
+[![NuGet](https://img.shields.io/nuget/v/RazorCodeFormatter?color=blue&logo=nuget)](https://www.nuget.org/packages/RazorCodeFormatter/)
 [![.NET Version](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#contributing--license)
 
@@ -122,7 +124,7 @@ code --install-extension razor-formatter.razor-code-formatter
 ```
 
 ### 3. Visual Studio 2022
-Download the extension from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/manage/publishers/razor-formatter) or install the compiled `.vsix` from our [GitHub Releases](https://github.com/Khilaraj123/RazorFormatter/releases).
+Install directly from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=razor-formatter.razorfmt) (search for **Razor Formatter for Visual Studio**) or download the `.vsix` from our [GitHub Releases](https://github.com/Khilaraj123/RazorFormatter/releases).
 
 ---
 

@@ -126,3 +126,4 @@ namespace RazorFormatter.Tests
         }
     }
 }
+

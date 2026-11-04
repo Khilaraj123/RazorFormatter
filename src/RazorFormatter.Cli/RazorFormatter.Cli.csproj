@@ -2,7 +2,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RazorFormatter.Core\RazorFormatter.Core.csproj" />
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="PACKAGE-README.md" Pack="true" PackagePath="\" />
+    <None Include="icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -15,15 +16,16 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>razorfmt</ToolCommandName>
     <PackageId>RazorCodeFormatter</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>RazorFormatter Contributors</Authors>
     <Description>Fast, deterministic, Prettier-grade code formatter for ASP.NET Core Razor (.cshtml and .razor) files.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/Khilaraj123/RazorFormatter</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Khilaraj123/RazorFormatter</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>razor;formatter;dotnet;cshtml;blazor;format</PackageTags>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>razor;formatter;dotnet;cshtml;blazor;format;razorfmt</PackageTags>
+    <PackageReadmeFile>PACKAGE-README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
 </Project>
